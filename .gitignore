@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+outputs/
+uploads/
+neural_outputs/
+*.wav
+*.zip

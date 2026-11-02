@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>BiFed-S | Voice Enhancement</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f3f6fb;
+            color: #1e293b;
+        }
+
+        header {
+            background: #14213d;
+            color: white;
+            padding: 24px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+            font-size: 30px;
+        }
+
+        header p {
+            margin: 0;
+            color: #dbeafe;
+            font-size: 15px;
+        }
+
+        main {
+            width: 100%;
+            max-width: 760px;
+            margin: 35px auto;
+            padding: 0 18px;
+        }
+
+        .card {
+            background: white;
+            padding: 28px;
+            margin-bottom: 22px;
+            border-radius: 14px;
+            box-shadow: 0 5px 22px rgba(15, 23, 42, 0.08);
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #14213d;
+            font-size: 23px;
+        }
+
+        .description {
+            color: #64748b;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .upload-area {
+            margin-top: 22px;
+            padding: 25px;
+            border: 2px dashed #93a4bd;
+            border-radius: 12px;
+            background: #f8fafc;
+            text-align: center;
+        }
+
+        input[type="file"] {
+            display: block;
+            width: 100%;
+            margin: 18px 0;
+            padding: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            background: white;
+        }
+
+        button,
+        .download-button {
+            display: inline-block;
+            border: none;
+            border-radius: 8px;
+            padding: 13px 22px;
+            background: #2563eb;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s ease;
+        }
+
+        button:hover,
+        .download-button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            line-height: 1.5;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+            border: 1px solid #bbf7d0;
+        }
+
+        .result-box {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .result-box h3 {
+            margin-top: 0;
+            color: #14213d;
+        }
+
+        audio {
+            display: block;
+            width: 100%;
+            margin: 18px 0;
+        }
+
+        .details {
+            color: #475569;
+            font-size: 14px;
+            line-height: 1.8;
+            overflow-wrap: anywhere;
+        }
+
+        .settings {
+            margin: 0;
+            padding-left: 20px;
+            color: #475569;
+            line-height: 1.9;
+        }
+
+        footer {
+            padding: 20px;
+            text-align: center;
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        .loading {
+            display: none;
+            margin-top: 15px;
+            color: #1d4ed8;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            header h1 {
+                font-size: 25px;
+            }
+
+            .card {
+                padding: 20px;
+            }
+
+            .upload-area {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>BiFed-S</h1>
+    <p>Voice Enhancement and Noise Reduction Prototype</p>
+</header>
+
+<main>
+
+    <section class="card">
+        <h2>Enhance Your Audio</h2>
+
+        <p class="description">
+            Upload a noisy audio recording to reduce background noise
+            using DeepFilterNet3. The application also removes silence
+            from the beginning and end of the processed recording.
+        </p>
+
+        {% if error %}
+            <div class="message error" role="alert">
+                <strong>Error:</strong> {{ error }}
+            </div>
+        {% endif %}
+
+        {% if success %}
+            <div class="message success" role="status">
+                <strong>{{ success }}</strong>
+            </div>
+        {% endif %}
+
+        <div class="upload-area">
+            <form
+                id="uploadForm"
+                action="{{ url_for('process_audio') }}"
+                method="POST"
+                enctype="multipart/form-data"
+            >
+                <label for="audio">
+                    <strong>Select an audio file</strong>
+                </label>
+
+                <input
+                    type="file"
+                    id="audio"
+                    name="audio"
+                    accept=".wav,.flac,.ogg,.aif,.aiff,audio/wav,audio/flac,audio/ogg,audio/aiff"
+                    required
+                >
+
+                <p class="description">
+                    Supported formats: WAV, FLAC, OGG, AIFF and AIF.
+                    Maximum file size: 50 MB.
+                </p>
+
+                <button type="submit" id="submitButton">
+                    Reduce Noise
+                </button>
+
+                <div class="loading" id="loadingMessage" aria-live="polite">
+                    Processing audio. Please wait...
+                </div>
+            </form>
+        </div>
+    </section>
+
+    {% if output_filename %}
+        <section class="card">
+            <h2>Enhanced Audio</h2>
+
+            <div class="result-box">
+                <h3>Processed Recording</h3>
+
+                <audio controls preload="metadata">
+                    <source
+                        src="{{ url_for('play_audio', filename=output_filename) }}"
+                        type="audio/wav"
+                    >
+                    Your browser does not support audio playback.
+                </audio>
+
+                <div class="details">
+                    <p>
+                        <strong>Original file:</strong>
+                        {{ original_filename }}
+                    </p>
+
+                    <p>
+                        <strong>Output file:</strong>
+                        {{ output_filename }}
+                    </p>
+
+                    <p>
+                        <strong>Output sample rate:</strong>
+                        {{ sample_rate }} Hz
+                    </p>
+                </div>
+
+                <a
+                    class="download-button"
+                    href="{{ url_for('download_audio', filename=output_filename) }}"
+                >
+                    Download Enhanced WAV
+                </a>
+            </div>
+        </section>
+    {% endif %}
+
+    <section class="card">
+        <h2>Processing Information</h2>
+
+        <ul class="settings">
+            <li><strong>Enhancement model:</strong> DeepFilterNet3</li>
+            <li><strong>Output format:</strong> WAV</li>
+            <li><strong>Silence threshold:</strong> -40 dB</li>
+            <li><strong>Frame duration:</strong> 20 milliseconds</li>
+            <li><strong>Silence padding:</strong> 80 milliseconds</li>
+            <li>
+                <strong>Silence handling:</strong>
+                Trims leading and trailing silence while preserving
+                pauses in the middle of the recording.
+            </li>
+        </ul>
+    </section>
+
+</main>
+
+<footer>
+    BiFed-S Voice Prototype | Federated Biometric System Project
+</footer>
+
+<script>
+    const uploadForm = document.getElementById("uploadForm");
+    const audioInput = document.getElementById("audio");
+    const submitButton = document.getElementById("submitButton");
+    const loadingMessage = document.getElementById("loadingMessage");
+
+    uploadForm.addEventListener("submit", function (event) {
+        if (!audioInput.files || audioInput.files.length === 0) {
+            event.preventDefault();
+            alert("Please select an audio file.");
+            return;
+        }
+
+        const file = audioInput.files[0];
+        const allowedExtensions = ["wav", "flac", "ogg", "aif", "aiff"];
+        const extension = file.name.split(".").pop().toLowerCase();
+
+        if (!allowedExtensions.includes(extension)) {
+            event.preventDefault();
+            alert(
+                "Unsupported format. Please select a WAV, FLAC, OGG, AIFF, or AIF file."
+            );
+            return;
+        }
+
+        const maximumSize = 50 * 1024 * 1024;
+
+        if (file.size > maximumSize) {
+            event.preventDefault();
+            alert("The file exceeds the 50 MB upload limit.");
+            return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "Processing...";
+        loadingMessage.style.display = "block";
+    });
+</script>
+
+</body>
+</html>
